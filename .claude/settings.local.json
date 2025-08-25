@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(timeout 5 npm run dev --workspace=weather-service)",
+      "Bash(curl:*)",
+      "Bash(npm run test:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npm view:*)",
+      "Bash(lsof:*)",
+      "Bash(chmod:*)",
+      "Bash(npm run dev:stop:*)",
+      "Bash(node:*)",
+      "Bash(mv:*)",
+      "Bash(./scripts/stop-services.sh:*)",
+      "Bash(./scripts/start-services.sh:*)",
+      "Bash(npm run dev:status:*)",
+      "WebFetch(domain:docs.honeycomb.io)",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": []
+  }
+}

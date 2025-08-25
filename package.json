@@ -1,0 +1,35 @@
+{
+  "name": "otel-microfrontend-example",
+  "version": "1.0.0",
+  "description": "Smart City Dashboard - A microfrontend example with OpenTelemetry observability via Honeycomb",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "./scripts/start-services.sh",
+    "dev:stop": "./scripts/stop-services.sh", 
+    "dev:restart": "./scripts/stop-services.sh && sleep 2 && ./scripts/start-services.sh",
+    "dev:status": "./scripts/check-services.sh",
+    "dev:old": "concurrently \"npm run dev --workspace=ui-service-shell\" \"npm run dev --workspace=weather-service\" \"npm run dev --workspace=traffic-service\" \"npm run dev --workspace=transit-service\" \"npm run dev --workspace=energy-service\"",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "test:e2e": "playwright test",
+    "lint": "eslint packages/*/src --ext .js,.jsx,.ts,.tsx",
+    "type-check": "npm run type-check --workspaces"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

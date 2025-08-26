@@ -39,12 +39,18 @@ test.describe('Microfrontend Loading', () => {
     
     await page.goto('/')
     
-    // Should still show widget containers during slow loads
-    await expect(page.locator('.widget-container')).toHaveCount(6)
-    
     // Dashboard structure should still be intact
     await expect(page.locator('.dashboard')).toBeVisible()
     await expect(page.locator('.dashboard-header')).toBeVisible()
+    
+    // Click all control buttons to activate widgets
+    await page.click('button:has-text("🚦 Traffic Monitor")')
+    await page.click('button:has-text("🚌 Public Transit")')
+    await page.click('button:has-text("⚡ Energy Grid")')
+    await page.click('button:has-text("📅 City Updates")')
+    
+    // Now should show all 6 widget containers (1 default + 5 activated)
+    await expect(page.locator('.widget-container')).toHaveCount(6)
   })
 
   test('verifies telemetry integration', async ({ page }) => {
@@ -85,7 +91,13 @@ test.describe('Microfrontend Loading', () => {
     await expect(page.locator('h1')).toContainText('Smart City Dashboard')
     await expect(page.locator('.dashboard-grid')).toBeVisible()
     
-    // Other widgets should still be visible
+    // Click all control buttons to activate widgets
+    await page.click('button:has-text("🚦 Traffic Monitor")')
+    await page.click('button:has-text("🚌 Public Transit")')
+    await page.click('button:has-text("⚡ Energy Grid")')
+    await page.click('button:has-text("📅 City Updates")')
+    
+    // All widgets should still be visible (6 total: weather + 5 others)
     const widgets = page.locator('.widget-container')
     await expect(widgets).toHaveCount(6)
   })

@@ -30,7 +30,13 @@
       "Bash(npm run lint)",
       "Bash(npm test)",
       "Bash(git checkout:*)",
-      "Bash(timeout 10s npm run dev --workspace=weather-service)"
+      "Bash(timeout 10s npm run dev --workspace=weather-service)",
+      "mcp__honeycomb_ca__get_workspace_context",
+      "mcp__honeycomb_ca__get_trace",
+      "mcp__honeycomb_ca__get_dataset",
+      "mcp__honeycomb_ca__run_query",
+      "Bash(npm test:*)",
+      "mcp__honeycomb_ca__get_environment"
     ],
     "deny": []
   }

@@ -23,7 +23,8 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       // Explicitly expose environment variables
-      __VITE_HONEYCOMB_API_KEY__: JSON.stringify(env.VITE_HONEYCOMB_API_KEY)
+      __VITE_HONEYCOMB_API_KEY__: JSON.stringify(env.VITE_HONEYCOMB_API_KEY),
+      'import.meta.env.VITE_MICROFRONTEND_NAME': JSON.stringify('ui-service-shell')
     }
   }
 })

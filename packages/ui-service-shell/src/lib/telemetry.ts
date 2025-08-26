@@ -68,7 +68,7 @@ class MicrofrontendSpanProcessor implements SpanProcessor {
 
 const sdk = new HoneycombWebSDK({
   apiKey: apiKey,
-  serviceName: 'smart-city-dashboard',
+  serviceName: import.meta.env.VITE_MICROFRONTEND_NAME || 'smart-city-dashboard',
   instrumentations: [getWebAutoInstrumentations()],
   spanProcessors: [new MicrofrontendSpanProcessor()]
 })

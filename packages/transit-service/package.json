@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "vitest"
+    "test": "vitest",
+    "type-check": "tsc --noEmit",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",

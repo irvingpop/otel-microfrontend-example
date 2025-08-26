@@ -14,27 +14,27 @@ This project demonstrates:
 ## 🏗️ Architecture
 
 ### Main Shell Application
-- **ui-service-shell** - Main container application (Port 3000)
+- **ui-service-shell** - Main container application (Port 8080)
 
 ### Microfrontend Services
-- **weather-service** - Real-time weather monitoring (Port 3001)
-- **traffic-service** - Traffic flow analysis (Port 3002) 
-- **transit-service** - Public transit tracking (Port 3003)
-- **energy-service** - Energy grid monitoring (Port 3004)
-- **events-service** - City events and activities (Port 3005)
-- **notifications-service** - System alerts and notifications (Port 3006)
+- **weather-service** - Real-time weather monitoring (Port 8081)
+- **traffic-service** - Traffic flow analysis (Port 8082)
+- **transit-service** - Public transit tracking (Port 8083)
+- **energy-service** - Energy grid monitoring (Port 8084)
+- **events-service** - City events and activities (Port 8085)
+- **notifications-service** - System alerts and notifications (Port 8086)
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm 8+
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/irvingpop/otel-microfrontend-example
 cd otel-microfrontend-example
 
 # Install dependencies
@@ -59,12 +59,17 @@ VITE_HONEYCOMB_API_KEY=your-api-key-here
 
 ```bash
 # Start all services concurrently
-npm run dev
+npm run
 
 # Or start individual services
-npm run dev --workspace=ui-service-shell
-npm run dev --workspace=weather-service
-# ... etc
+npm run start --workspace=ui-service-shell
+npm run start --workspace=weather-service
+
+# Restart all the services
+npm run restart
+
+# Stop all the services
+npm run stop
 ```
 
 The dashboard will be available at http://localhost:3000
@@ -121,7 +126,7 @@ npx playwright test --ui
 
 The application tracks:
 - **Microfrontend Load Events** - `microfrontend.{name}.load`
-- **Error Events** - `microfrontend.{name}.error`  
+- **Error Events** - `microfrontend.{name}.error`
 - **Render Events** - `microfrontend.{name}.render_error`
 - **User Interactions** - Button clicks, navigation, etc.
 
@@ -259,7 +264,7 @@ OTEL_LOG_LEVEL=debug npm run dev
 
 1. Fork the repository
 2. Create a feature branch
-3. Add tests for new functionality  
+3. Add tests for new functionality
 4. Ensure all tests pass
 5. Submit a pull request
 

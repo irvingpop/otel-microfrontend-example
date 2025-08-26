@@ -7,13 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "./scripts/start-services.sh",
-    "dev:stop": "./scripts/stop-services.sh",
-    "dev:restart": "./scripts/stop-services.sh && sleep 2 && ./scripts/start-services.sh",
-    "dev:status": "./scripts/check-services.sh",
-    "dev:old": "concurrently \"npm run dev --workspace=ui-service-shell\" \"npm run dev --workspace=weather-service\" \"npm run dev --workspace=traffic-service\" \"npm run dev --workspace=transit-service\" \"npm run dev --workspace=energy-service\"",
+    "start": "./scripts/start-services.sh",
+    "stop": "./scripts/stop-services.sh",
+    "restart": "./scripts/stop-services.sh && sleep 2 && ./scripts/start-services.sh",
+    "status": "./scripts/check-services.sh",
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
+    "test": "npm run test:run --workspaces",
     "test:e2e": "playwright test",
     "lint": "eslint packages/*/src --ext .js,.jsx,.ts,.tsx",
     "type-check": "npm run type-check --workspaces"

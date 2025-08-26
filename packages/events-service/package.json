@@ -1,6 +1,6 @@
 {
   "name": "events-service",
-  "version": "1.0.0", 
+  "version": "1.0.0",
   "description": "Events microfrontend",
   "private": true,
   "type": "module",
@@ -9,6 +9,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

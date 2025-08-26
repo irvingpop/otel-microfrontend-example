@@ -38,11 +38,11 @@ export const TrafficWidget: React.FC = () => {
 
   if (loading) return <div style={{padding: '2rem', textAlign: 'center'}}>🚦 Loading...</div>
 
-  const getStatusColor = (status: string) => ({
-    green: '#00b894',
-    yellow: '#fdcb6e', 
-    red: '#e17055'
-  }[status] || '#74b9ff')
+  // const getStatusColor = (status: string) => ({
+  //   green: '#00b894',
+  //   yellow: '#fdcb6e', 
+  //   red: '#e17055'
+  // }[status] || '#74b9ff')
 
   const getStatusIcon = (status: string) => ({
     green: '🟢',

@@ -28,15 +28,24 @@ describe('Dashboard', () => {
     expect(screen.getByText('Real-time city monitoring with OpenTelemetry observability')).toBeInTheDocument()
   })
 
-  it('renders all microfrontend widgets', () => {
+  it('renders weather widget by default and control buttons', () => {
     renderDashboard()
     
+    // Weather widget should be visible by default
     expect(screen.getByTestId('microfrontend-weather')).toBeInTheDocument()
-    expect(screen.getByTestId('microfrontend-traffic')).toBeInTheDocument()
-    expect(screen.getByTestId('microfrontend-transit')).toBeInTheDocument()
-    expect(screen.getByTestId('microfrontend-energy')).toBeInTheDocument()
-    expect(screen.getByTestId('microfrontend-events')).toBeInTheDocument()
-    expect(screen.getByTestId('microfrontend-notifications')).toBeInTheDocument()
+    
+    // Other widgets should NOT be visible by default
+    expect(screen.queryByTestId('microfrontend-traffic')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('microfrontend-transit')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('microfrontend-energy')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('microfrontend-events')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('microfrontend-notifications')).not.toBeInTheDocument()
+    
+    // Control buttons should be present
+    expect(screen.getByText('🚦 Traffic Monitor')).toBeInTheDocument()
+    expect(screen.getByText('🚌 Public Transit')).toBeInTheDocument()
+    expect(screen.getByText('⚡ Energy Grid')).toBeInTheDocument()
+    expect(screen.getByText('📅 City Updates')).toBeInTheDocument()
   })
 
   it('has proper dashboard layout classes', () => {

@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "./scripts/start-services.sh",
-    "dev:stop": "./scripts/stop-services.sh", 
+    "dev:stop": "./scripts/stop-services.sh",
     "dev:restart": "./scripts/stop-services.sh && sleep 2 && ./scripts/start-services.sh",
     "dev:status": "./scripts/check-services.sh",
     "dev:old": "concurrently \"npm run dev --workspace=ui-service-shell\" \"npm run dev --workspace=weather-service\" \"npm run dev --workspace=traffic-service\" \"npm run dev --workspace=transit-service\" \"npm run dev --workspace=energy-service\"",
@@ -19,6 +19,7 @@
     "type-check": "npm run type-check --workspaces"
   },
   "devDependencies": {
+    "@module-federation/vite": "^1.7.1",
     "@playwright/test": "^1.40.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",

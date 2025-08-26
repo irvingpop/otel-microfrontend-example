@@ -1,7 +1,7 @@
 {
   "name": "notifications-service",
   "version": "1.0.0",
-  "description": "Notifications microfrontend", 
+  "description": "Notifications microfrontend",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +9,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

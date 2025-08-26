@@ -24,7 +24,13 @@
       "WebFetch(domain:docs.honeycomb.io)",
       "Bash(ls:*)",
       "Bash(cp:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run lint)",
+      "Bash(npm test)",
+      "Bash(git checkout:*)",
+      "Bash(timeout 10s npm run dev --workspace=weather-service)"
     ],
     "deny": []
   }

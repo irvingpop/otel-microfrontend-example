@@ -40,7 +40,6 @@ export const SimpleMicrofrontendWrapper: React.FC<SimpleMicrofrontendWrapperProp
         }
       })
       .catch(err => {
-        const loadTime = performance.now() - startTime
         trackMicrofrontendError(config.name, err)
         setError(`Failed to check ${name}: ${err.message}`)
         setIsLoading(false)

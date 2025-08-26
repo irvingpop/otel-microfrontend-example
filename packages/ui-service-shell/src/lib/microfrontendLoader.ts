@@ -11,45 +11,45 @@ export interface MicrofrontendConfig {
 export const microfrontends: Record<string, MicrofrontendConfig> = {
   weather: {
     name: 'weather-service',
-    url: 'http://localhost:3001',
+    url: 'http://localhost:8081',
     scope: 'weatherService',
     module: './WeatherWidget',
-    port: 3001
+    port: 8081
   },
   traffic: {
     name: 'traffic-service',
-    url: 'http://localhost:3002',
+    url: 'http://localhost:8082',
     scope: 'trafficService', 
     module: './TrafficWidget',
-    port: 3002
+    port: 8082
   },
   transit: {
     name: 'transit-service',
-    url: 'http://localhost:3003',
+    url: 'http://localhost:8083',
     scope: 'transitService',
     module: './TransitWidget',
-    port: 3003
+    port: 8083
   },
   energy: {
     name: 'energy-service',
-    url: 'http://localhost:3004',
+    url: 'http://localhost:8084',
     scope: 'energyService',
     module: './EnergyWidget',
-    port: 3004
+    port: 8084
   },
   events: {
     name: 'events-service',
-    url: 'http://localhost:3005',
+    url: 'http://localhost:8085',
     scope: 'eventsService',
     module: './EventsWidget',
-    port: 3005
+    port: 8085
   },
   notifications: {
     name: 'notifications-service',
-    url: 'http://localhost:3006',
+    url: 'http://localhost:8086',
     scope: 'notificationsService',
     module: './NotificationsWidget',
-    port: 3006
+    port: 8086
   }
 }
 
@@ -74,12 +74,12 @@ export const loadMicrofrontend = async (key: string): Promise<any> => {
   try {
     await loadRemoteEntry(config.url)
     
-    const container = window[config.scope]
+    const container = (window as any)[config.scope]
     if (!container) {
       throw new Error(`Container ${config.scope} not found`)
     }
 
-    await container.init(__webpack_share_scopes__.default)
+    await container.init((window as any).__webpack_share_scopes__.default)
     const factory = await container.get(config.module)
     const Module = factory()
     

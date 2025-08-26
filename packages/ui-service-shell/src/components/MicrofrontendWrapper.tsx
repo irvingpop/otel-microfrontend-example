@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, ErrorBoundary } from 'react'
+import React, { Suspense, lazy } from 'react'
 import { loadMicrofrontend } from '../lib/microfrontendLoader'
 import { createMicrofrontendSpan } from '../lib/telemetry'
 

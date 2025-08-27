@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { SimpleMicrofrontendWrapper } from './SimpleMicrofrontendWrapper'
-import { createMicrofrontendSpan } from '../lib/telemetry'
+import { getOrCreateSessionTrace, trackWidgetActivation, trackWidgetDeactivation } from '../lib/telemetry'
 import './Dashboard.css'
 
 interface VisibleWidgets {
@@ -22,41 +22,52 @@ export const Dashboard: React.FC = () => {
     notifications: false
   })
 
+  // Initialize session trace when dashboard loads
+  useEffect(() => {
+    getOrCreateSessionTrace()
+    // Track initial weather widget as activated
+    trackWidgetActivation('weather')
+  }, [])
+
   const getTotalVisibleWidgets = () => {
     return Object.values(visibleWidgets).filter(Boolean).length
   }
 
   const toggleWidget = (widgetName: keyof VisibleWidgets, isMultiple?: string[]) => {
-    const span = createMicrofrontendSpan(widgetName, 'toggle')
-    
     setVisibleWidgets(prev => {
       if (isMultiple) {
         // Handle multiple widgets (events + notifications)
         const newState = { ...prev }
         isMultiple.forEach(widget => {
-          newState[widget as keyof VisibleWidgets] = !prev[widget as keyof VisibleWidgets]
-        })
-        span.setAttributes({
-          'user.action': 'toggle_multiple',
-          'widgets.toggled': isMultiple.join(','),
-          'widgets.new_state': isMultiple.map(w => newState[w as keyof VisibleWidgets]).join(',')
+          const isActivating = !prev[widget as keyof VisibleWidgets]
+          newState[widget as keyof VisibleWidgets] = isActivating
+          
+          // Track activation/deactivation
+          if (isActivating) {
+            trackWidgetActivation(widget)
+          } else {
+            trackWidgetDeactivation(widget)
+          }
         })
         return newState
       } else {
         // Handle single widget
+        const isActivating = !prev[widgetName]
         const newState = {
           ...prev,
-          [widgetName]: !prev[widgetName]
+          [widgetName]: isActivating
         }
-        span.setAttributes({
-          'user.action': 'toggle_single',
-          'widget.new_state': newState[widgetName]
-        })
+        
+        // Track activation/deactivation
+        if (isActivating) {
+          trackWidgetActivation(widgetName)
+        } else {
+          trackWidgetDeactivation(widgetName)
+        }
+        
         return newState
       }
     })
-    
-    span.end()
   }
 
   return (

@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { microfrontends, checkServiceHealth } from '../lib/simpleMicrofrontendLoader'
-import { trackMicrofrontendLoad, trackMicrofrontendError } from '../lib/telemetry'
+import { trackMicrofrontendLoad, trackMicrofrontendError, trackWidgetLoaded, getOrCreateSessionTrace } from '../lib/telemetry'
+import { postMessageWithTrace, getTraceContext } from '../../../shared/telemetry-config'
+import { trace, context } from '@opentelemetry/api'
 
 interface SimpleMicrofrontendWrapperProps {
   name: string
@@ -14,8 +16,21 @@ export const SimpleMicrofrontendWrapper: React.FC<SimpleMicrofrontendWrapperProp
   const [isHealthy, setIsHealthy] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const config = microfrontends[name]
+  
+  // Listen for widget loaded messages from iframes
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'WIDGET_LOADED' && event.data.service === config?.name) {
+        trackWidgetLoaded(name, event.data.data || {})
+      }
+    }
+    
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [name, config])
 
   useEffect(() => {
     if (!config) {
@@ -74,10 +89,24 @@ export const SimpleMicrofrontendWrapper: React.FC<SimpleMicrofrontendWrapperProp
         title={config.name}
         onLoad={() => {
           console.log(`✅ Loaded microfrontend: ${config.name}`)
+          // Send session trace context to the iframe once it loads
+          if (iframeRef.current?.contentWindow) {
+            const sessionTrace = getOrCreateSessionTrace()
+            const sessionContext = trace.setSpan(context.active(), sessionTrace)
+            
+            context.with(sessionContext, () => {
+              const traceHeaders = getTraceContext()
+              iframeRef.current?.contentWindow?.postMessage({
+                type: 'TRACE_CONTEXT_INIT',
+                traceContext: traceHeaders
+              }, '*')
+            })
+          }
         }}
         onError={() => {
           trackMicrofrontendError(config.name, new Error('Iframe failed to load'))
         }}
+        ref={iframeRef}
       />
     </div>
   )

@@ -8,8 +8,27 @@ export const EnergyWidget: React.FC = () => {
     efficiency: 92,
     carbonSaved: 248
   })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Initial load delay, then notify parent
+    const timer = setTimeout(() => {
+      setLoading(false)
+      
+      // Notify parent that widget has loaded
+      window.parent.postMessage({
+        type: 'WIDGET_LOADED',
+        service: 'energy-service',
+        data: {
+          current_usage: data.current,
+          renewable_percentage: data.renewable,
+          peak_today: data.peak,
+          efficiency: data.efficiency,
+          carbon_saved: data.carbonSaved
+        }
+      }, '*')
+    }, 500)
+    
     const interval = setInterval(() => {
       setData(prev => ({
         ...prev,
@@ -18,7 +37,11 @@ export const EnergyWidget: React.FC = () => {
         efficiency: Math.floor(Math.random() * 5) + 90
       }))
     }, 5000)
-    return () => clearInterval(interval)
+    
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
   }, [])
 
   return (

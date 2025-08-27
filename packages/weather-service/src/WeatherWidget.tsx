@@ -1,55 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import './WeatherWidget.css'
-// Lightweight telemetry utilities - these would normally come from shared library
-import { trace } from '@opentelemetry/api'
-
-const createModuleTracer = (moduleName: string) => {
-  try {
-    return trace.getTracer(`microfrontend.${moduleName}`)
-  } catch {
-    // Fallback if OpenTelemetry isn't initialized
-    return {
-      startSpan: () => ({
-        setAttributes: () => {},
-        end: () => {}
-      })
-    }
-  }
-}
-
-const trackModuleRender = (moduleName: string, renderTimeMs: number, componentName?: string) => {
-  try {
-    const tracer = trace.getTracer('smart-city-dashboard')
-    const span = tracer.startSpan(`microfrontend.${moduleName}.render`)
-    span.setAttributes({
-      'microfrontend.module': moduleName,
-      'microfrontend.operation': 'render',
-      'microfrontend.render_time_ms': renderTimeMs,
-      'microfrontend.type': 'custom',
-      ...(componentName && { 'microfrontend.component': componentName })
-    })
-    span.end()
-  } catch {
-    // Silently fail if telemetry is not available
-  }
-}
-
-const trackModuleInteraction = (moduleName: string, interactionType: string, target?: string) => {
-  try {
-    const tracer = trace.getTracer('smart-city-dashboard')
-    const span = tracer.startSpan(`microfrontend.${moduleName}.interaction`)
-    span.setAttributes({
-      'microfrontend.module': moduleName,
-      'microfrontend.operation': 'interaction',
-      'microfrontend.interaction_type': interactionType,
-      'microfrontend.type': 'custom',
-      ...(target && { 'microfrontend.interaction_target': target })
-    })
-    span.end()
-  } catch {
-    // Silently fail if telemetry is not available
-  }
-}
 
 interface WeatherData {
   location: string
@@ -84,33 +34,28 @@ const mockWeatherData: WeatherData = {
 export const WeatherWidget: React.FC = () => {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
-  const moduleTracer = createModuleTracer('weather-service')
 
   useEffect(() => {
-    const renderStart = performance.now()
-    
-    // Simulate API call
-    const span = moduleTracer.startSpan('weather.data.fetch')
-    span.setAttributes({
-      'weather.location': mockWeatherData.location,
-      'weather.operation': 'mock_fetch'
-    })
-    
     const timer = setTimeout(() => {
       setWeather(mockWeatherData)
       setLoading(false)
       
-      const renderTime = performance.now() - renderStart
-      trackModuleRender('weather-service', renderTime, 'WeatherWidget')
-      
-      span.setAttributes({ 'weather.fetch.duration_ms': renderTime })
-      span.end()
+      // Notify parent that widget has loaded
+      window.parent.postMessage({
+        type: 'WIDGET_LOADED',
+        service: 'weather-service',
+        data: {
+          location: mockWeatherData.location,
+          temperature: mockWeatherData.temperature,
+          condition: mockWeatherData.condition,
+          humidity: mockWeatherData.humidity,
+          wind_speed: mockWeatherData.windSpeed,
+          forecast_days: mockWeatherData.forecast.length
+        }
+      }, '*')
     }, 800)
-
-    return () => {
-      clearTimeout(timer)
-      span.end()
-    }
+    
+    return () => clearTimeout(timer)
   }, [])
 
   const getWeatherIcon = (condition: string) => {
@@ -175,7 +120,6 @@ export const WeatherWidget: React.FC = () => {
             <div 
               key={index} 
               className="forecast-day"
-              onClick={() => trackModuleInteraction('weather-service', 'forecast_day_click', day.day)}
             >
               <div className="day-name">{day.day}</div>
               <div className="day-icon">{day.icon}</div>

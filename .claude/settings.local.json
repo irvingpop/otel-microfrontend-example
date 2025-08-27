@@ -36,7 +36,12 @@
       "mcp__honeycomb_ca__get_dataset",
       "mcp__honeycomb_ca__run_query",
       "Bash(npm test:*)",
-      "mcp__honeycomb_ca__get_environment"
+      "mcp__honeycomb_ca__get_environment",
+      "Bash(npm run dev:*)",
+      "mcp__honeycomb_ca__get_query_results",
+      "Bash(npm run start:*)",
+      "Bash(npm start)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

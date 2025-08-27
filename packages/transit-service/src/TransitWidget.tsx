@@ -29,7 +29,21 @@ export const TransitWidget: React.FC = () => {
     const timer = setTimeout(() => {
       setData(mockTransitData)
       setLoading(false)
+      
+      // Notify parent that widget has loaded
+      window.parent.postMessage({
+        type: 'WIDGET_LOADED',
+        service: 'transit-service',
+        data: {
+          routes_count: mockTransitData.routes.length,
+          alerts_count: mockTransitData.alerts.length,
+          on_time_routes: mockTransitData.routes.filter(r => r.status === 'on-time').length,
+          delayed_routes: mockTransitData.routes.filter(r => r.status === 'delayed').length,
+          cancelled_routes: mockTransitData.routes.filter(r => r.status === 'cancelled').length
+        }
+      }, '*')
     }, 700)
+    
     return () => clearTimeout(timer)
   }, [])
 

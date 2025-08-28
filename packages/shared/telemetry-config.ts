@@ -20,17 +20,21 @@ export const initializeTelemetry = (config: TelemetryConfig) => {
     (globalThis as any).__VITE_HONEYCOMB_API_KEY__ || 
     'demo-key'
 
+  const debug = config.debug ?? 
+    ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEBUG_TELEMETRY === 'true') ||
+    false)
+
   const sdk = new HoneycombWebSDK({
     apiKey,
     serviceName: config.serviceName,
     instrumentations: [getWebAutoInstrumentations()],
-    debug: config.debug || false
+    debug
   })
 
   sdk.start()
   initialized = true
 
-  if (config.debug) {
+  if (debug) {
     console.log(`🍯 Telemetry initialized for ${config.serviceName}`)
   }
 }

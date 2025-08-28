@@ -96,9 +96,19 @@ export const SimpleMicrofrontendWrapper: React.FC<SimpleMicrofrontendWrapperProp
             
             context.with(sessionContext, () => {
               const traceHeaders = getTraceContext()
+              const spanContext = sessionTrace.spanContext()
+              
+              console.log('🍯 Shell sending trace context:', {
+                traceHeaders,
+                traceId: spanContext.traceId,
+                spanId: spanContext.spanId
+              })
+              
               iframeRef.current?.contentWindow?.postMessage({
                 type: 'TRACE_CONTEXT_INIT',
-                traceContext: traceHeaders
+                traceContext: traceHeaders,
+                traceId: spanContext.traceId,
+                spanId: spanContext.spanId
               }, '*')
             })
           }

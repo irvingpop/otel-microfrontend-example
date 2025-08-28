@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { trace, context, propagation } from '@opentelemetry/api'
+import { trace, context, propagation, SpanContext, TraceFlags } from '@opentelemetry/api'
 
 interface TrafficData {
   overallStatus: 'good' | 'moderate' | 'heavy'
@@ -28,15 +28,28 @@ const mockTrafficData: TrafficData = {
 export const TrafficWidget: React.FC = () => {
   const [traffic, setTraffic] = useState<TrafficData | null>(null)
   const [loading, setLoading] = useState(true)
-  const parentTraceContext = useRef<any>(null)
+  const parentSpanContext = useRef<SpanContext | null>(null)
   const tracer = trace.getTracer('traffic-service', '1.0.0')
 
   // Listen for trace context from parent
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'TRACE_CONTEXT_INIT' && event.data.traceContext) {
-        console.log('🍯 Traffic service received trace context:', event.data.traceContext)
-        parentTraceContext.current = propagation.extract(context.active(), event.data.traceContext)
+      if (event.data.type === 'TRACE_CONTEXT_INIT') {
+        console.log('🍯 Traffic service received message:', {
+          traceId: event.data.traceId,
+          spanId: event.data.spanId
+        })
+        
+        if (event.data.traceId && event.data.spanId) {
+          // Create SpanContext directly from traceId and spanId
+          parentSpanContext.current = {
+            traceId: event.data.traceId,
+            spanId: event.data.spanId,
+            traceFlags: TraceFlags.SAMPLED,
+            isRemote: false  // Try non-remote to see if that helps
+          }
+          console.log('🍯 Created parent span context:', parentSpanContext.current)
+        }
       }
     }
     
@@ -48,52 +61,79 @@ export const TrafficWidget: React.FC = () => {
     const timer = setTimeout(() => {
       console.log('🚦 Traffic widget loading data...')
       
-      // Create a span for data loading within the parent trace context
-      const activeContext = parentTraceContext.current || context.active()
-      
-      context.with(activeContext, () => {
-        console.log('🍯 Creating traffic spans in context')
-        
-        const loadSpan = tracer.startSpan('traffic.load_data')
-        console.log('🍯 Created traffic.load_data span')
-        
-        loadSpan.setAttributes({
-          'traffic.routes_count': mockTrafficData.routes.length,
-          'traffic.overall_status': mockTrafficData.overallStatus,
-          'traffic.incidents': mockTrafficData.incidents,
-          'traffic.avg_speed': mockTrafficData.averageSpeed
-        })
-        
-        setTraffic(mockTrafficData)
-        setLoading(false)
-        
-        loadSpan.end()
-        console.log('🍯 Ended traffic.load_data span')
-        
-        // Create another span for the widget loaded event
-        const widgetLoadedSpan = tracer.startSpan('traffic.widget_loaded')
-        console.log('🍯 Created traffic.widget_loaded span')
-        
-        widgetLoadedSpan.setAttributes({
-          'widget.type': 'traffic',
-          'widget.status': 'loaded'
-        })
-        
-        // Notify parent that widget has loaded
-        window.parent.postMessage({
-          type: 'WIDGET_LOADED',
-          service: 'traffic-service',
-          data: {
-            routes_count: mockTrafficData.routes.length,
-            overall_status: mockTrafficData.overallStatus,
-            incidents: mockTrafficData.incidents,
-            avg_speed: mockTrafficData.averageSpeed
-          }
-        }, '*')
-        
-        widgetLoadedSpan.end()
-        console.log('🍯 Ended traffic.widget_loaded span')
+      // First create a simple test span without parent context
+      const testSpan = tracer.startSpan('traffic.test_span')
+      testSpan.setAttributes({
+        'service.name': 'traffic-service',
+        'test': 'basic_span_creation'
       })
+      testSpan.end()
+      console.log('🍯 Created and ended test span')
+
+      // Create spans with explicit parent context
+      let loadSpan
+      if (parentSpanContext.current) {
+        console.log('🍯 Creating span with parent trace ID:', parentSpanContext.current.traceId)
+        // Use the startSpan options to set parent directly
+        loadSpan = tracer.startSpan('traffic.load_data', {
+          parent: parentSpanContext.current
+        })
+        console.log('🍯 Creating traffic.load_data span with parent context')
+      } else {
+        loadSpan = tracer.startSpan('traffic.load_data')
+        console.log('🍯 Creating traffic.load_data span without parent')
+      }
+      console.log('🍯 Created traffic.load_data span')
+      
+      loadSpan.setAttributes({
+        'service.name': 'traffic-service',  // Explicitly set service name
+        'service.version': '1.0.0',
+        'traffic.routes_count': mockTrafficData.routes.length,
+        'traffic.overall_status': mockTrafficData.overallStatus,
+        'traffic.incidents': mockTrafficData.incidents,
+        'traffic.avg_speed': mockTrafficData.averageSpeed
+      })
+      
+      setTraffic(mockTrafficData)
+      setLoading(false)
+      
+      loadSpan.end()
+      console.log('🍯 Ended traffic.load_data span')
+      
+      // Create another span for the widget loaded event
+      let widgetLoadedSpan
+      if (parentSpanContext.current) {
+        widgetLoadedSpan = tracer.startSpan('traffic.widget_loaded', {
+          parent: parentSpanContext.current
+        })
+        console.log('🍯 Creating traffic.widget_loaded span with parent context')
+      } else {
+        widgetLoadedSpan = tracer.startSpan('traffic.widget_loaded')
+        console.log('🍯 Creating traffic.widget_loaded span without parent')
+      }
+      console.log('🍯 Created traffic.widget_loaded span')
+      
+      widgetLoadedSpan.setAttributes({
+        'service.name': 'traffic-service',  // Explicitly set service name
+        'service.version': '1.0.0',
+        'widget.type': 'traffic',
+        'widget.status': 'loaded'
+      })
+      
+      // Notify parent that widget has loaded
+      window.parent.postMessage({
+        type: 'WIDGET_LOADED',
+        service: 'traffic-service',
+        data: {
+          routes_count: mockTrafficData.routes.length,
+          overall_status: mockTrafficData.overallStatus,
+          incidents: mockTrafficData.incidents,
+          avg_speed: mockTrafficData.averageSpeed
+        }
+      }, '*')
+      
+      widgetLoadedSpan.end()
+      console.log('🍯 Ended traffic.widget_loaded span')
     }, 1000)
     
     return () => clearTimeout(timer)

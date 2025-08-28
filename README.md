@@ -46,14 +46,26 @@ npm run install --workspaces
 
 ### Environment Setup
 
-Create a `.env` file in the root directory:
+Copy the example environment file and configure:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` with your configuration:
 
 ```env
-# Optional: Your Honeycomb API key for production telemetry
-VITE_HONEYCOMB_API_KEY=your-api-key-here
+# Honeycomb Configuration
+# Get your API key from https://ui.honeycomb.io/account
+VITE_HONEYCOMB_API_KEY=your-honeycomb-api-key-here
 
-# Development uses demo-key by default
+# Development Configuration
+VITE_DEBUG_TELEMETRY=true
+VITE_SERVICE_NAME=smart-city-dashboard
+VITE_ENVIRONMENT=development
 ```
+
+**Note**: All services automatically inherit environment variables from the root `.env` file.
 
 ### Development
 

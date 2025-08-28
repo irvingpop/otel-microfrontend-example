@@ -41,7 +41,13 @@
       "mcp__honeycomb_ca__get_query_results",
       "Bash(npm run start:*)",
       "Bash(npm start)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "mcp__honeycomb_ca__get_dataset_columns",
+      "Bash(for service in transit-service events-service notifications-service)",
+      "Bash(do echo \"=== $service ===\")",
+      "Bash(head:*)",
+      "Bash(done)",
+      "Bash(npm restart)"
     ],
     "deny": []
   }

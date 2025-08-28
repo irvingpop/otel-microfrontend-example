@@ -6,12 +6,15 @@ import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations
 
 console.log('🚦 Traffic service starting...')
 
-// Initialize telemetry directly
+// Initialize telemetry using centralized environment variables
+const apiKey = import.meta.env.VITE_HONEYCOMB_API_KEY || 'demo-key'
+const debug = import.meta.env.VITE_DEBUG_TELEMETRY === 'true'
+
 const sdk = new HoneycombWebSDK({
-  apiKey: 'demo-key',
+  apiKey,
   serviceName: 'traffic-service',
   instrumentations: [getWebAutoInstrumentations()],
-  debug: true
+  debug
 })
 
 sdk.start()

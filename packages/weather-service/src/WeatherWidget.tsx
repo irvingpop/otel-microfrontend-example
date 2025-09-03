@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import './WeatherWidget.css'
+import { MicrofrontendTelemetry } from '../../shared/microfrontend-telemetry'
 
 interface WeatherData {
   location: string
@@ -31,30 +32,43 @@ const mockWeatherData: WeatherData = {
   ]
 }
 
+// Initialize telemetry for this microfrontend
+const telemetry = new MicrofrontendTelemetry('weather-service')
+
 export const WeatherWidget: React.FC = () => {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setWeather(mockWeatherData)
-      setLoading(false)
-      
+      console.log('🌤️ Weather widget loading data...')
+
+      // Load weather data with telemetry
+      telemetry.withSpan('weather.load_data', (span) => {
+        span.setAttributes({
+          'weather.location': mockWeatherData.location,
+          'weather.condition': mockWeatherData.condition,
+          'weather.temperature': mockWeatherData.temperature,
+          'weather.humidity': mockWeatherData.humidity,
+          'weather.wind_speed': mockWeatherData.windSpeed,
+          'weather.forecast_days': mockWeatherData.forecast.length
+        })
+
+        setWeather(mockWeatherData)
+        setLoading(false)
+      })
+
       // Notify parent that widget has loaded
-      window.parent.postMessage({
-        type: 'WIDGET_LOADED',
-        service: 'weather-service',
-        data: {
-          location: mockWeatherData.location,
-          temperature: mockWeatherData.temperature,
-          condition: mockWeatherData.condition,
-          humidity: mockWeatherData.humidity,
-          wind_speed: mockWeatherData.windSpeed,
-          forecast_days: mockWeatherData.forecast.length
-        }
-      }, '*')
+      telemetry.notifyWidgetLoaded('weather', {
+        location: mockWeatherData.location,
+        temperature: mockWeatherData.temperature,
+        condition: mockWeatherData.condition,
+        humidity: mockWeatherData.humidity,
+        wind_speed: mockWeatherData.windSpeed,
+        forecast_days: mockWeatherData.forecast.length
+      })
     }, 800)
-    
+
     return () => clearTimeout(timer)
   }, [])
 
@@ -93,7 +107,7 @@ export const WeatherWidget: React.FC = () => {
         <h3>🌤️ Weather</h3>
         <span className="location">{weather.location}</span>
       </div>
-      
+
       <div className="current-weather">
         <div className="temperature-display">
           <span className="temp">{weather.temperature}°C</span>
@@ -117,8 +131,8 @@ export const WeatherWidget: React.FC = () => {
         <h4>5-Day Forecast</h4>
         <div className="forecast-grid">
           {weather.forecast.map((day, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="forecast-day"
             >
               <div className="day-name">{day.day}</div>

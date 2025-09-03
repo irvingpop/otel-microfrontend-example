@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { microfrontends, checkServiceHealth } from '../lib/simpleMicrofrontendLoader'
 import { trackMicrofrontendLoad, trackMicrofrontendError, trackWidgetLoaded, getOrCreateSessionTrace } from '../lib/telemetry'
-import { postMessageWithTrace, getTraceContext } from '../../../shared/telemetry-config'
+import { getTraceContext } from '../../../shared/telemetry-config'
 import { trace, context } from '@opentelemetry/api'
 
 interface SimpleMicrofrontendWrapperProps {
@@ -19,7 +19,7 @@ export const SimpleMicrofrontendWrapper: React.FC<SimpleMicrofrontendWrapperProp
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const config = microfrontends[name]
-  
+
   // Listen for widget loaded messages from iframes
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -27,7 +27,7 @@ export const SimpleMicrofrontendWrapper: React.FC<SimpleMicrofrontendWrapperProp
         trackWidgetLoaded(name, event.data.data || {})
       }
     }
-    
+
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
   }, [name, config])
@@ -40,12 +40,12 @@ export const SimpleMicrofrontendWrapper: React.FC<SimpleMicrofrontendWrapperProp
     }
 
     const startTime = performance.now()
-    
+
     checkServiceHealth(config.url)
       .then(healthy => {
         setIsHealthy(healthy)
         setIsLoading(false)
-        
+
         const loadTime = performance.now() - startTime
         if (healthy) {
           trackMicrofrontendLoad(config.name, loadTime)
@@ -93,17 +93,17 @@ export const SimpleMicrofrontendWrapper: React.FC<SimpleMicrofrontendWrapperProp
           if (iframeRef.current?.contentWindow) {
             const sessionTrace = getOrCreateSessionTrace()
             const sessionContext = trace.setSpan(context.active(), sessionTrace)
-            
+
             context.with(sessionContext, () => {
               const traceHeaders = getTraceContext()
               const spanContext = sessionTrace.spanContext()
-              
+
               console.log('🍯 Shell sending trace context:', {
                 traceHeaders,
                 traceId: spanContext.traceId,
                 spanId: spanContext.spanId
               })
-              
+
               iframeRef.current?.contentWindow?.postMessage({
                 type: 'TRACE_CONTEXT_INIT',
                 traceContext: traceHeaders,

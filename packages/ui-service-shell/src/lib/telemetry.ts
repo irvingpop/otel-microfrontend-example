@@ -1,19 +1,40 @@
 import { initializeTelemetry, getServiceTracer } from '../../../shared/telemetry-config'
 import { trace, propagation, context } from '@opentelemetry/api'
 
-// Initialize telemetry for the shell service
+// Initialize telemetry for the entire application (only in shell)
 initializeTelemetry({
-  serviceName: 'ui-service-shell',
+  serviceName: 'smart-city-dashboard',  // Main app service name
   debug: true
+})
+
+// Export the initialization promise for components to wait on
+export const telemetryReady = new Promise<void>((resolve) => {
+  // Wait for page to be fully loaded and telemetry to be initialized
+  if (document.readyState === 'complete') {
+    resolve()
+  } else {
+    window.addEventListener('load', () => resolve())
+  }
 })
 
 export const tracer = getServiceTracer('ui-service-shell', '1.0.0')
 
 // Session-level trace management
 let sessionTrace: any = null
+let sessionEnded = false // Track if session trace has ended
+const widgetStates = new Map<string, boolean>() // Track which widgets have been activated
 
 export const getOrCreateSessionTrace = () => {
-  if (!sessionTrace) {
+  if (!sessionTrace || sessionEnded) {
+    // Reset ended flag
+    sessionEnded = false
+
+    // Get the active span - this should be from page load instrumentation
+    const activeSpan = trace.getActiveSpan()
+    console.log('🍯 Active span when creating session:', activeSpan)
+
+    // Create session span as a child of the current context
+    // The SingleTraceSpanProcessor will ensure it's part of the main trace
     sessionTrace = tracer.startSpan('dashboard.session', {
       attributes: {
         'session.start_time': Date.now(),
@@ -21,6 +42,25 @@ export const getOrCreateSessionTrace = () => {
         'service.name': 'ui-service-shell'
       }
     })
+
+    console.log('🍯 Created session span:', {
+      traceId: sessionTrace.spanContext().traceId,
+      spanId: sessionTrace.spanContext().spanId,
+      activeSpan: activeSpan ? activeSpan.spanContext() : 'none'
+    })
+
+    // Set up cleanup when page unloads
+    const cleanup = () => {
+      if (sessionTrace && !sessionEnded) {
+        console.log('🍯 Ending session span on beforeunload')
+        sessionTrace.end()
+        sessionEnded = true
+        sessionTrace = null
+      }
+    }
+
+    window.addEventListener('beforeunload', cleanup)
+    window.addEventListener('unload', cleanup)
   }
   return sessionTrace
 }
@@ -44,7 +84,7 @@ const createServiceSpan = (serviceName: string, operation: string, parentContext
 const getServiceNameForModule = (moduleName: string): string => {
   const serviceMapping: Record<string, string> = {
     'weather': 'weather-service',
-    'traffic': 'traffic-service', 
+    'traffic': 'traffic-service',
     'transit': 'transit-service',
     'energy': 'energy-service',
     'events': 'events-service',
@@ -55,9 +95,15 @@ const getServiceNameForModule = (moduleName: string): string => {
 
 // Widget lifecycle management
 export const trackWidgetActivation = (widgetName: string) => {
+  // Prevent duplicate activation events
+  if (widgetStates.get(widgetName)) {
+    return // Widget already activated
+  }
+  widgetStates.set(widgetName, true)
+
   const sessionTrace = getOrCreateSessionTrace()
   const serviceName = getServiceNameForModule(widgetName)
-  
+
   const sessionContext = trace.setSpan(context.active(), sessionTrace)
   const span = createServiceSpan(serviceName, 'activate', sessionContext)
   span.setAttributes({
@@ -66,14 +112,17 @@ export const trackWidgetActivation = (widgetName: string) => {
     'widget.timestamp': Date.now()
   })
   span.end()
-  
+
   return span
 }
 
 export const trackWidgetDeactivation = (widgetName: string) => {
+  // Reset widget state on deactivation
+  widgetStates.set(widgetName, false)
+
   const sessionTrace = getOrCreateSessionTrace()
   const serviceName = getServiceNameForModule(widgetName)
-  
+
   const sessionContext = trace.setSpan(context.active(), sessionTrace)
   const span = createServiceSpan(serviceName, 'deactivate', sessionContext)
   span.setAttributes({
@@ -82,14 +131,24 @@ export const trackWidgetDeactivation = (widgetName: string) => {
     'widget.timestamp': Date.now()
   })
   span.end()
-  
+
   return span
 }
 
+// Track loaded widgets to prevent duplicates
+const loadedWidgets = new Set<string>()
+
 export const trackWidgetLoaded = (widgetName: string, data: Record<string, any>) => {
+  // Prevent duplicate loaded events for the same widget
+  const loadKey = `${widgetName}_${JSON.stringify(data)}`
+  if (loadedWidgets.has(loadKey)) {
+    return // Already tracked this exact load
+  }
+  loadedWidgets.add(loadKey)
+
   const sessionTrace = getOrCreateSessionTrace()
   const serviceName = getServiceNameForModule(widgetName)
-  
+
   const sessionContext = trace.setSpan(context.active(), sessionTrace)
   const span = createServiceSpan(serviceName, 'loaded', sessionContext)
   span.setAttributes({
@@ -102,7 +161,7 @@ export const trackWidgetLoaded = (widgetName: string, data: Record<string, any>)
     }), {})
   })
   span.end()
-  
+
   return span
 }
 
@@ -113,13 +172,18 @@ export const createMicrofrontendSpan = (name: string, operation: string) => {
 }
 
 export const trackMicrofrontendLoad = (name: string, loadTimeMs: number) => {
-  const span = tracer.startSpan(`microfrontend.${name}.load`)
-  span.setAttributes({
-    'microfrontend.name': name,
-    'microfrontend.load_time_ms': loadTimeMs,
-    'microfrontend.status': 'loaded'
+  // Create the span within the session context
+  const sessionContext = sessionTrace ? trace.setSpan(context.active(), sessionTrace) : context.active()
+
+  context.with(sessionContext, () => {
+    const span = tracer.startSpan(`microfrontend.${name}.load`)
+    span.setAttributes({
+      'microfrontend.name': name,
+      'microfrontend.load_time_ms': loadTimeMs,
+      'microfrontend.status': 'loaded'
+    })
+    span.end()
   })
-  span.end()
 }
 
 export const trackMicrofrontendError = (name: string, error: Error) => {
@@ -186,3 +250,20 @@ export const createIframeSpan = (name: string, operation: string, serviceName: s
 // Export shared tracer and trace API for microfrontends
 export { trace } from '@opentelemetry/api'
 export const sharedTracer = tracer
+
+// Clean up session trace
+export const endSessionTrace = () => {
+  if (sessionTrace && !sessionEnded) {
+    console.log('🍯 Ending session span manually')
+    const startTime = sessionTrace._startTime || Date.now()
+    sessionTrace.setAttributes({
+      'session.end_time': Date.now(),
+      'session.duration_ms': Date.now() - startTime
+    })
+    sessionTrace.end()
+    sessionEnded = true
+    sessionTrace = null
+    widgetStates.clear()
+    loadedWidgets.clear()
+  }
+}

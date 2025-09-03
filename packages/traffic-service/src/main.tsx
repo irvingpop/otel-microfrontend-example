@@ -1,24 +1,15 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import TrafficWidget from './TrafficWidget'
-import { HoneycombWebSDK } from '@honeycombio/opentelemetry-web'
-import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web'
+import { initializeTelemetry } from '../../shared/telemetry-config'
 
 console.log('🚦 Traffic service starting...')
 
-// Initialize telemetry using centralized environment variables
-const apiKey = import.meta.env.VITE_HONEYCOMB_API_KEY || 'demo-key'
-const debug = import.meta.env.VITE_DEBUG_TELEMETRY === 'true'
-
-const sdk = new HoneycombWebSDK({
-  apiKey,
+// Initialize telemetry (will be skipped if in iframe)
+initializeTelemetry({
   serviceName: 'traffic-service',
-  instrumentations: [getWebAutoInstrumentations()],
-  debug
+  debug: true
 })
-
-sdk.start()
-console.log('🍯 Honeycomb SDK initialized for traffic-service')
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

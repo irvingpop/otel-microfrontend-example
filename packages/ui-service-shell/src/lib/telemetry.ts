@@ -22,7 +22,11 @@ export const tracer = getServiceTracer('ui-service-shell', '1.0.0')
 // Session-level trace management
 let sessionTrace: any = null
 let sessionEnded = false // Track if session trace has ended
+let sessionTimeoutId: any = null // Track timeout for auto-closing session
 const widgetStates = new Map<string, boolean>() // Track which widgets have been activated
+
+// Auto-close timeout duration (10 seconds)
+const SESSION_TIMEOUT_MS = 10000
 
 export const getOrCreateSessionTrace = () => {
   if (!sessionTrace || sessionEnded) {
@@ -49,18 +53,69 @@ export const getOrCreateSessionTrace = () => {
       activeSpan: activeSpan ? activeSpan.spanContext() : 'none'
     })
 
+    // Set up auto-close timeout
+    if (sessionTimeoutId) {
+      clearTimeout(sessionTimeoutId)
+    }
+    sessionTimeoutId = setTimeout(() => {
+      if (sessionTrace && !sessionEnded) {
+        try {
+          console.log('🍯 Auto-closing session span after timeout')
+          sessionTrace.setAttribute('session.auto_closed', true)
+          sessionTrace.setAttribute('session.close_reason', 'timeout')
+          sessionTrace.end()
+        } catch (e) {
+          console.log('🍯 Session span already ended:', e instanceof Error ? e.message : String(e))
+        }
+        sessionEnded = true
+        sessionTrace = null
+      }
+    }, SESSION_TIMEOUT_MS)
+
     // Set up cleanup when page unloads
     const cleanup = () => {
+      if (sessionTimeoutId) {
+        clearTimeout(sessionTimeoutId)
+        sessionTimeoutId = null
+      }
       if (sessionTrace && !sessionEnded) {
-        console.log('🍯 Ending session span on beforeunload')
-        sessionTrace.end()
+        try {
+          console.log('🍯 Ending session span on page unload')
+          sessionTrace.setAttribute('session.close_reason', 'page_unload')
+          sessionTrace.end()
+        } catch (e) {
+          console.log('🍯 Session span already ended:', e instanceof Error ? e.message : String(e))
+        }
         sessionEnded = true
         sessionTrace = null
       }
     }
 
+    // Multiple event listeners for better coverage
     window.addEventListener('beforeunload', cleanup)
     window.addEventListener('unload', cleanup)
+    window.addEventListener('pagehide', cleanup)
+
+    // Also set up visibility change handler
+    const handleVisibilityChange = () => {
+      if (document.hidden && sessionTrace && !sessionEnded) {
+        try {
+          console.log('🍯 Page hidden, ending session span')
+          sessionTrace.setAttribute('session.close_reason', 'page_hidden')
+          sessionTrace.end()
+        } catch (e) {
+          console.log('🍯 Session span already ended:', e instanceof Error ? e.message : String(e))
+        }
+        sessionEnded = true
+        sessionTrace = null
+        if (sessionTimeoutId) {
+          clearTimeout(sessionTimeoutId)
+          sessionTimeoutId = null
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
   }
   return sessionTrace
 }
@@ -254,13 +309,17 @@ export const sharedTracer = tracer
 // Clean up session trace
 export const endSessionTrace = () => {
   if (sessionTrace && !sessionEnded) {
-    console.log('🍯 Ending session span manually')
-    const startTime = sessionTrace._startTime || Date.now()
-    sessionTrace.setAttributes({
-      'session.end_time': Date.now(),
-      'session.duration_ms': Date.now() - startTime
-    })
-    sessionTrace.end()
+    try {
+      console.log('🍯 Ending session span manually')
+      const startTime = sessionTrace._startTime || Date.now()
+      sessionTrace.setAttributes({
+        'session.end_time': Date.now(),
+        'session.duration_ms': Date.now() - startTime
+      })
+      sessionTrace.end()
+    } catch (e) {
+      console.log('🍯 Session span already ended:', e instanceof Error ? e.message : String(e))
+    }
     sessionEnded = true
     sessionTrace = null
     widgetStates.clear()

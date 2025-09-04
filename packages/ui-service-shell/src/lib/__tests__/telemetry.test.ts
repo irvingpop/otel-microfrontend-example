@@ -14,11 +14,11 @@ vi.mock('@opentelemetry/api', () => ({
       }),
     }),
     getActiveSpan: vi.fn(),
-    setSpan: vi.fn((context, span) => context),
+    setSpan: vi.fn((_context, _span) => _context),
   },
   context: {
     active: vi.fn().mockReturnValue({}),
-    with: vi.fn((context, fn) => fn()),
+    with: vi.fn((_context, fn) => fn()),
   },
   propagation: {
     inject: vi.fn(),
@@ -62,6 +62,7 @@ import { getServiceTracer } from '../../../../shared/telemetry-config'
 
 describe('Telemetry', () => {
   let mockTracer: any
+  let mockSpan: any
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -69,6 +70,10 @@ describe('Telemetry', () => {
       ; (global as any).sessionTrace = null
     // Get the mocked tracer
     mockTracer = getServiceTracer('test')
+    // Get the mocked span from the tracer
+    mockTracer.startSpan()
+    mockSpan = mockTracer.startSpan.mock.results[0].value
+    vi.clearAllMocks()
   })
 
   afterEach(() => {

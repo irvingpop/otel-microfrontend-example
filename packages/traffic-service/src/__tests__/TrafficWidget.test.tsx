@@ -5,7 +5,7 @@ import { TrafficWidget } from '../TrafficWidget'
 // Mock MicrofrontendTelemetry
 vi.mock('../../../shared/microfrontend-telemetry', () => ({
   MicrofrontendTelemetry: vi.fn().mockImplementation(() => ({
-    withSpan: vi.fn((name, fn) => fn({ setAttributes: vi.fn() })),
+    withSpan: vi.fn((_name, fn) => fn({ setAttributes: vi.fn() })),
     notifyWidgetLoaded: vi.fn()
   }))
 }))
